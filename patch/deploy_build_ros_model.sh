@@ -174,21 +174,26 @@ echo "$xbot_lib" >> $CATKIN_WS"/devel/setup.bash"
 # Find external xbot common libraries for XBotBlock (CartesianInterface,OpenSoT, XBotInterface, ModelInterface and RobotInterface)
 ext_xbotlib_dir=`cat ~/.bashrc | grep EXTERNAL_XBOTLIB_DIR`|| true
 
-if [ -z "$ext_xbotlib_dir"]
-then
+if [ -z "$ext_xbotlib_dir" ] ; then
       echo Empty variable, continue...
-elif [[ "$ext_xbotlib_dir" == *"#"* ]]
-then      
+elif [[ "$ext_xbotlib_dir" == *"#"* ]] ; then      
       echo Variable commented, continue...
 else
    $ext_xbotlib_dir
    ext_xbot_lib=`cat ~/.bashrc | grep $EXTERNAL_XBOTLIB_DIR"setup"`
+   echo $ext_xbot_lib
    echo "$ext_xbot_lib" >> $CATKIN_WS"/devel/setup.bash"
 fi
+echo ext_xbotlib_dir OK, continue...
 
 # Find Block Factory path
-blockfactory_plugin_path=`cat ~/.bashrc | grep BLOCKFACTORY_PLUGIN_PATH`
-echo "$blockfactory_plugin_path" >> $CATKIN_WS"/devel/setup.bash"
+blockfactory_plugin_path=`cat ~/.bashrc | grep BLOCKFACTORY_PLUGIN_PATH` || true
+if [ -z "$blockfactory_plugin_path" ] ; then
+      echo Empty variable, continue...
+else
+  echo "$blockfactory_plugin_path" >> $CATKIN_WS"/devel/setup.bash" 
+  echo blockfactory_plugin_path OK, continue...
+fi
 
 # Build the Simulink model as a catkin project
 # Ignore error code from the source command. If the environment setup is
