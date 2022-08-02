@@ -2,6 +2,19 @@
 
 actual_dir=$(pwd)
 
+#cd /usr/local/MATLAB/R2020b/sys/os/glnxa64/
+
+#if [[ `lsb_release -cs` == "focal" ]]; then 
+#   if [ -e libstdc++.so.6.bak ]
+#   then
+#      echo "File: libstdc++.so.6 already copied into bak file."
+#   else
+#      echo "File libstdc++.so.6: Copied actual configuration into back file"
+#      mv libstdc++.so.6 libstdc++.so.6.bak
+#      ln -s /usr/lib/x86_64-linux-gnu/libstdc++.so.6  libstdc++.so.6
+#   fi   
+#fi
+
 cd /usr/local/MATLAB/R2020b/toolbox/ros/utilities/+ros/+codertarget/+internal
 
 if [ -e onAfterCodeGen_old.m ]

@@ -13,6 +13,34 @@ export LC_ALL=C
 ARCHIVE="$1"
 CATKIN_WS="$2"
 
+takeBashrcVar() {
+   # Find xbot common libraries for XBotBlock (CartesianInterface,OpenSoT, XBotInterface, ModelInterface and RobotInterface)
+   xbot_lib=`cat ~/.bashrc | grep /opt/xbot/setup`|| true
+   echo "$xbot_lib" >> $CATKIN_WS"/devel/setup.bash"
+
+   # Find external xbot common libraries for XBotBlock (CartesianInterface,OpenSoT, XBotInterface, ModelInterface and RobotInterface)
+   ext_xbotlib_dir=`cat ~/.bashrc | grep EXTERNAL_XBOTLIB_DIR`|| true
+
+   if [ -z "$ext_xbotlib_dir" ] ; then
+      echo Empty variable, continue...
+   elif [[ "$ext_xbotlib_dir" == *"#"* ]] ; then      
+      echo Variable commented, continue...
+   else
+      $ext_xbotlib_dir
+      ext_xbot_lib=`cat ~/.bashrc | grep $EXTERNAL_XBOTLIB_DIR"setup"`
+      echo "$ext_xbot_lib" >> $CATKIN_WS"/devel/setup.bash"
+   fi
+
+   # Find Block Factory path
+   blockfactory_plugin_path=`cat ~/.bashrc | grep BLOCKFACTORY_PLUGIN_PATH` || true
+   if [ -z "$blockfactory_plugin_path" ] ; then
+     echo Empty variable, continue...
+   else
+     echo "$blockfactory_plugin_path" >> $CATKIN_WS"/devel/setup.bash" 
+     echo blockfactory_plugin_path OK, continue...
+   fi
+}
+
 echoErr() { 
    echo "$@" 1>&2; 
 }
@@ -167,33 +195,8 @@ fi
 # Ensure that catkin_make will rebuild the executable
 touch "$PROJECT_DIR"/*.cpp
 
-# Find xbot common libraries for XBotBlock (CartesianInterface,OpenSoT, XBotInterface, ModelInterface and RobotInterface)
-xbot_lib=`cat ~/.bashrc | grep /opt/xbot/setup`|| true
-echo "$xbot_lib" >> $CATKIN_WS"/devel/setup.bash"
-
-# Find external xbot common libraries for XBotBlock (CartesianInterface,OpenSoT, XBotInterface, ModelInterface and RobotInterface)
-ext_xbotlib_dir=`cat ~/.bashrc | grep EXTERNAL_XBOTLIB_DIR`|| true
-
-if [ -z "$ext_xbotlib_dir" ] ; then
-      echo Empty variable, continue...
-elif [[ "$ext_xbotlib_dir" == *"#"* ]] ; then      
-      echo Variable commented, continue...
-else
-   $ext_xbotlib_dir
-   ext_xbot_lib=`cat ~/.bashrc | grep $EXTERNAL_XBOTLIB_DIR"setup"`
-   echo $ext_xbot_lib
-   echo "$ext_xbot_lib" >> $CATKIN_WS"/devel/setup.bash"
-fi
-echo ext_xbotlib_dir OK, continue...
-
-# Find Block Factory path
-blockfactory_plugin_path=`cat ~/.bashrc | grep BLOCKFACTORY_PLUGIN_PATH` || true
-if [ -z "$blockfactory_plugin_path" ] ; then
-      echo Empty variable, continue...
-else
-  echo "$blockfactory_plugin_path" >> $CATKIN_WS"/devel/setup.bash" 
-  echo blockfactory_plugin_path OK, continue...
-fi
+# get and save the environment variables for xbotblock initialization phase
+takeBashrcVar
 
 # Build the Simulink model as a catkin project
 # Ignore error code from the source command. If the environment setup is
@@ -211,6 +214,10 @@ else
     echo "compile nrt node and rt plugin"
     catkin_make "$MODEL_NAME"_node "$MODEL_NAME"_plugin
 fi
+
+# get and save the environment variables xbotblock the run phase
+takeBashrcVar
+
 
 cd "$CURR_DIR"
 
