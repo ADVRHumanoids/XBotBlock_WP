@@ -40,6 +40,29 @@ endif()
 # Find BlockFactory
 find_package(BlockFactory REQUIRED COMPONENTS Core SimulinkCoder)
 
+{% var found_rt_plugin = false; %}
+{% var plugin_expr = '_rt_plugin'; %}
+
+{% for k = numel(SourceFiles) %}
+{% var plugin_index = regexp(SourceFiles{k},plugin_expr); %}
+{% if ~isempty(plugin_index) %}
+{% var found_rt_plugin = true %}
+{% endif %}
+{% endfor %}
+
+{% if found_rt_plugin %}
+
+# Find XBot2
+find_package(xbot2 REQUIRED)
+
+# Find XBotBlock
+find_package(XBotBlock REQUIRED)
+
+#  Add internal variable for RT xbot2 plugin
+option(XBOT2_ENABLE_XENO OFF "Compile against xenomai")
+set(XBOT2_ENABLE_XENO OFF CACHE BOOL "Disable real-time features" FORCE)   
+{% endif %}
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -273,11 +296,16 @@ install(FILES controllers.xml
 
 {% endif %}
 
+
+
 {% if ~isempty(CppNodeName) %}
 # Declare executable - Node
 add_executable({%CppNodeName%}
-{% for j = numel(SourceFiles) %}
-  {% SourceFiles{j} %}
+{% for k = numel(SourceFiles) %}
+{% var plugin_index = regexp(SourceFiles{k},plugin_expr); %}
+{% if isempty(plugin_index) %}
+  {% SourceFiles{k} %}
+{% endif %}
 {% endfor %}
 )
 
@@ -352,6 +380,68 @@ target_link_libraries(
     BlockFactory::Core 
     BlockFactory::SimulinkCoder
 )
+
+{% if found_rt_plugin %}
+
+{% var main_filename = 'main'; %}
+{% var ros_filename = ["rosnodeinterface","slros_busmsg_conversion","slros_initialize","slros_generic_param"]; %}
+{% var pil_filename = ["ext_svr","updown","ext_work","rtiostream_utils","rtiostream_interface","rtiostream_tcpip"]; %}
+
+get_target_property(COMP_OPT {%CppNodeName%} COMPILE_OPTIONS)
+foreach( d ${COMP_OPT} )
+   if (${d} STREQUAL "-DXBOT2_ENABLE_XENO=ON")
+      set(XBOT2_ENABLE_XENO ON CACHE BOOL "Enable real-time features" FORCE)
+      continue()
+   endif()
+endforeach()
+
+add_xbot2_plugin(${PROJECT_NAME}_plugin
+{% for k = numel(SourceFiles) %}
+  {% var main_index = regexp(SourceFiles{k},main_filename); %}
+  {% var ros_index = regexp(SourceFiles{k},ros_filename); %}
+  {% var pil_index = regexp(SourceFiles{k},pil_filename); %}
+  {% if isempty(main_index) && isempty(find(~cellfun(@isempty,ros_index))) && isempty(find(~cellfun(@isempty,pil_index))) %}
+{% SourceFiles{k} %}
+  {% endif %}
+{% endfor %}
+)
+
+target_include_directories(${PROJECT_NAME}_plugin PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
+## Specify libraries to link a library or executable target against
+target_link_libraries(
+  ${PROJECT_NAME}_plugin
+    PUBLIC
+{% if ~isempty(CppLibraryName) || ~isempty(Libraries) %}
+{% if ~isempty(CppLibraryName) %}
+    {%CppLibraryName%}
+{% endif %}
+{% for i = numel(Libraries) %}
+	{% Libraries{i} %}
+{% endfor %}
+{% endif %}
+{% for k = numel(ImportedLibraries) %}
+    coder_custom_lib_{% num2str(k) %}
+{% endfor %}
+{% if ~isempty(LinkerFlags) %}
+    {% LinkerFlags %}
+{% endfor %}
+    ${catkin_LIBRARIES}
+    ${Boost_LIBRARIES}
+    ${CMAKE_DL_LIBS}
+    PRIVATE
+    BlockFactory::Core 
+    BlockFactory::SimulinkCoder
+)
+
+install(TARGETS ${PROJECT_NAME}_plugin
+  EXPORT export_${PROJECT_NAME}
+  DESTINATION lib/${PROJECT_NAME})
+
+{% endif %}
+
 
 
 install(TARGETS {%CppNodeName%}
