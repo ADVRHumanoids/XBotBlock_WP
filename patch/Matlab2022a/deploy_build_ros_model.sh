@@ -39,6 +39,15 @@ takeBashrcVar() {
      echo "$blockfactory_plugin_path" >> $CATKIN_WS"/devel/setup.bash" 
      echo blockfactory_plugin_path OK, continue...
    fi
+   
+   # Find XBotBlock External configuration path
+   xbotblock_external_cfg=`cat ~/.bashrc | grep XBOTBLOCK_EXT_CFG` || true
+   if [ -z "xbotblock_external_cfg" ] ; then
+     echo Empty variable, continue...
+   else
+     echo "xbotblock_external_cfg" >> $CATKIN_WS"/devel/setup.bash" 
+     echo xbotblock_external_cfg OK, continue...
+   fi
 }
 
 echoErr() { 
